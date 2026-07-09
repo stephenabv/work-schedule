@@ -10,7 +10,7 @@ A personal class schedule tracker for the 1st Semester, SY 2026–2027, built wi
 - Light/dark theme (persisted)
 - Print-friendly layout
 - Download the current schedule view (legend + grid/list, respecting active filters) as a PNG
-- Placeholder notifications panel + `app/api/notifications/route.ts` stub for wiring up push/email/SMS reminders later
+- SMS class reminders via [Semaphore](https://semaphore.co) — send a test SMS on demand from the UI, or wire the API route to a scheduler for automatic reminders
 
 ## Getting started
 
@@ -30,14 +30,25 @@ All schedule data lives in `lib/schedule-data.ts`, transcribed from a handwritte
 
 If you'd rather show a single canonical day per event, or if a room/time was misread, `lib/schedule-data.ts` is the only file you need to touch — every view derives from it.
 
-## Notification integration (future work)
+## SMS notifications (Semaphore)
 
-`app/api/notifications/route.ts` currently returns `501 Not Implemented`. To wire up real reminders:
+`app/api/notifications/route.ts` sends class-reminder SMS through [Semaphore](https://semaphore.co).
 
-1. Pick a delivery channel (Web Push, email via Resend/SendGrid, SMS via Twilio).
-2. Add a subscriptions store (KV/DB) for user preferences (which reminders, contact info).
-3. Add a scheduler (e.g. Vercel Cron) that diffs `lib/schedule-data.ts` against the current time and dispatches through the chosen provider.
-4. Replace the disabled toggles in `components/NotificationsPanel.tsx` with working ones once the backend exists.
+**Setup:**
+
+1. Copy `.env.example` to `.env.local` for local dev, or set the same keys directly in your Vercel project's Environment Variables (Settings → Environment Variables) for deployed use:
+   - `SEMAPHORE_API_KEY` — from your Semaphore dashboard.
+   - `SEMAPHORE_SENDER_NAME` — optional, a Semaphore-registered sender name (defaults to `SEMAPHORE`).
+   - `NOTIFY_PHONE_NUMBER` — the PH-format number (e.g. `09171234567`) that receives reminders.
+2. Redeploy after setting the variables in Vercel (env var changes only take effect on the next deployment).
+
+**Usage:**
+
+- `GET /api/notifications` reports whether the integration is configured (`configured`, `hasApiKey`, `hasPhoneNumber`) — no secrets are exposed.
+- `POST /api/notifications` sends an SMS. Optional JSON body `{ "phone": "...", "message": "..." }` overrides the recipient and/or message; otherwise it defaults to `NOTIFY_PHONE_NUMBER` and an auto-generated "current/next class" message (see `lib/notify-message.ts`).
+- The **Class Reminders** panel in the UI shows configuration status and has a "Send test SMS" button wired to the same route.
+
+**Automatic reminders (next step):** this route sends on-demand; it isn't scheduled yet. To get reminders automatically before class, add a scheduler (e.g. [Vercel Cron](https://vercel.com/docs/cron-jobs)) that calls `POST /api/notifications` on an interval and compares against `lib/schedule-data.ts` to decide when to fire. Note Vercel's Hobby plan only allows daily cron runs — anything more frequent (e.g. every 10 minutes) needs a Pro plan or an external scheduler. A cron config isn't included here yet so it doesn't accidentally fail deployment on a plan that doesn't support it.
 
 ## Deployment
 
