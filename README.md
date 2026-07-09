@@ -10,7 +10,7 @@ A personal class schedule tracker for the 1st Semester, SY 2026–2027, built wi
 - Light/dark theme (persisted)
 - Print-friendly layout
 - Download the current schedule view (legend + grid/list, respecting active filters) as a PNG
-- SMS class reminders via [Semaphore](https://semaphore.co) — send a test SMS on demand from the UI, or wire the API route to a scheduler for automatic reminders
+- SMS class reminders via [Semaphore](https://semaphore.co) — send a test SMS on demand from the UI, plus automatic reminders 10 minutes before each class via Vercel Cron
 
 ## Getting started
 
@@ -40,15 +40,20 @@ If you'd rather show a single canonical day per event, or if a room/time was mis
    - `SEMAPHORE_API_KEY` — from your Semaphore dashboard.
    - `SEMAPHORE_SENDER_NAME` — optional, a Semaphore-registered sender name (defaults to `SEMAPHORE`).
    - `NOTIFY_PHONE_NUMBER` — the PH-format number (e.g. `09171234567`) that receives reminders.
+   - `CRON_SECRET` — optional but recommended, a random string that authorizes calls to the cron endpoint (see below).
 2. Redeploy after setting the variables in Vercel (env var changes only take effect on the next deployment).
 
-**Usage:**
+**On-demand usage:**
 
 - `GET /api/notifications` reports whether the integration is configured (`configured`, `hasApiKey`, `hasPhoneNumber`) — no secrets are exposed.
 - `POST /api/notifications` sends an SMS. Optional JSON body `{ "phone": "...", "message": "..." }` overrides the recipient and/or message; otherwise it defaults to `NOTIFY_PHONE_NUMBER` and an auto-generated "current/next class" message (see `lib/notify-message.ts`).
 - The **Class Reminders** panel in the UI shows configuration status and has a "Send test SMS" button wired to the same route.
 
-**Automatic reminders (next step):** this route sends on-demand; it isn't scheduled yet. To get reminders automatically before class, add a scheduler (e.g. [Vercel Cron](https://vercel.com/docs/cron-jobs)) that calls `POST /api/notifications` on an interval and compares against `lib/schedule-data.ts` to decide when to fire. Note Vercel's Hobby plan only allows daily cron runs — anything more frequent (e.g. every 10 minutes) needs a Pro plan or an external scheduler. A cron config isn't included here yet so it doesn't accidentally fail deployment on a plan that doesn't support it.
+**Automatic reminders:** `vercel.json` schedules [Vercel Cron](https://vercel.com/docs/cron-jobs) to hit `GET /api/notifications/cron` every 10 minutes. That route checks `lib/schedule-data.ts` for any class starting in the next 6–10 minutes (see `getDueReminders` in `lib/notify-message.ts`) and texts a reminder for each match — the window is sized so a class is caught by exactly one tick, avoiding duplicate or missed sends.
+
+If `CRON_SECRET` is set, Vercel automatically sends it as `Authorization: Bearer <CRON_SECRET>` on its own cron requests, and the route rejects anything else with `401`. Without it, the endpoint accepts any request — set it once you deploy.
+
+Note: Vercel's Hobby plan only allows daily cron runs; the `*/10 * * * *` schedule in `vercel.json` needs a Pro plan (or swap in an external scheduler like cron-job.org hitting the same URL with the `CRON_SECRET` header) if you're on Hobby.
 
 ## Deployment
 

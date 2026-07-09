@@ -7,6 +7,8 @@ import { buildScheduleReminderMessage } from "@/lib/notify-message";
 // works standalone via the "Send test SMS" button, and can also be wired to
 // a scheduler (e.g. Vercel Cron) for automatic reminders before class.
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   return NextResponse.json({
     configured: Boolean(process.env.SEMAPHORE_API_KEY) && Boolean(process.env.NOTIFY_PHONE_NUMBER),

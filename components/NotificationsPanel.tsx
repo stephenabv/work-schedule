@@ -62,13 +62,6 @@ export default function NotificationsPanel() {
         )}
       </div>
 
-      <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-        Set <code className="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">SEMAPHORE_API_KEY</code> and{" "}
-        <code className="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">NOTIFY_PHONE_NUMBER</code> in your
-        Vercel project&apos;s environment variables (see <code>.env.example</code>) to enable this. Automatic
-        reminders before class still need a scheduler (e.g. Vercel Cron) calling this endpoint — see the README.
-      </p>
-
       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
           value={phone}

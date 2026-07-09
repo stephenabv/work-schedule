@@ -1,4 +1,5 @@
 import { SCHEDULE } from "./schedule-data";
+import { ScheduleEntry } from "./types";
 import { formatTime, getTodayName, isEntryNow, minutesUntil } from "./time-utils";
 
 export function buildScheduleReminderMessage(now: Date = new Date()): string {
@@ -22,4 +23,24 @@ export function buildScheduleReminderMessage(now: Date = new Date()): string {
   }
 
   return `WorkSched: No more classes scheduled for today (${today}).`;
+}
+
+export const REMINDER_LEAD_MINUTES = 10;
+// Must be smaller than the cron interval (see vercel.json) so each class is
+// only caught by exactly one tick — wide enough to absorb a bit of cron jitter.
+const REMINDER_WINDOW_MINUTES = 5;
+
+export function getDueReminders(now: Date = new Date()): ScheduleEntry[] {
+  const today = getTodayName(now);
+  return SCHEDULE.filter((e) => {
+    if (e.day !== today || e.type === "break" || e.type === "available") return false;
+    const mins = minutesUntil(e, now);
+    if (mins === null) return false;
+    return mins <= REMINDER_LEAD_MINUTES && mins > REMINDER_LEAD_MINUTES - REMINDER_WINDOW_MINUTES;
+  });
+}
+
+export function buildReminderMessage(entry: ScheduleEntry, now: Date = new Date()): string {
+  const mins = minutesUntil(entry, now) ?? REMINDER_LEAD_MINUTES;
+  return `WorkSched reminder: ${entry.title}${entry.room ? ` (${entry.room})` : ""} starts in ${mins} min at ${formatTime(entry.start)}.`;
 }
