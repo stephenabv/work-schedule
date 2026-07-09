@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendSms } from "@/lib/semaphore";
 import { buildReminderMessage, getDueReminders } from "@/lib/notify-message";
 
-// Invoked by Vercel Cron (see vercel.json) on a fixed interval. Checks
-// lib/schedule-data.ts for any class starting within the reminder window and
-// texts a reminder for each one via Semaphore.
+// Invoked every 10 minutes by the GitHub Actions workflow at
+// .github/workflows/sms-reminders.yml (Vercel's Hobby plan only allows daily
+// cron, so this runs outside Vercel instead). Checks lib/schedule-data.ts for
+// any class starting within the reminder window and texts a reminder for
+// each one via Semaphore.
 //
 // If CRON_SECRET is set, only requests carrying a matching
-// "Authorization: Bearer <CRON_SECRET>" header are accepted — Vercel sends
-// this header automatically for its own cron invocations once the env var
-// exists, which keeps this endpoint from being triggered by anyone who finds
-// the URL.
+// "Authorization: Bearer <CRON_SECRET>" header are accepted — the workflow
+// sends this header via a GitHub Actions secret of the same name, which
+// keeps this endpoint from being triggered by anyone who finds the URL.
 
 export const dynamic = "force-dynamic";
 

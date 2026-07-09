@@ -10,7 +10,7 @@ A personal class schedule tracker for the 1st Semester, SY 2026–2027, built wi
 - Light/dark theme (persisted)
 - Print-friendly layout
 - Download the current schedule view (legend + grid/list, respecting active filters) as a PNG
-- SMS class reminders via [Semaphore](https://semaphore.co) — send a test SMS on demand from the UI, plus automatic reminders 10 minutes before each class via Vercel Cron
+- SMS class reminders via [Semaphore](https://semaphore.co) — send a test SMS on demand from the UI, plus automatic reminders 10 minutes before each class via a scheduled GitHub Actions workflow
 
 ## Getting started
 
@@ -40,8 +40,9 @@ If you'd rather show a single canonical day per event, or if a room/time was mis
    - `SEMAPHORE_API_KEY` — from your Semaphore dashboard.
    - `SEMAPHORE_SENDER_NAME` — optional, a Semaphore-registered sender name (defaults to `SEMAPHORE`).
    - `NOTIFY_PHONE_NUMBER` — the PH-format number (e.g. `09171234567`) that receives reminders.
-   - `CRON_SECRET` — optional but recommended, a random string that authorizes calls to the cron endpoint (see below).
+   - `CRON_SECRET` — a random string that authorizes calls to the cron endpoint (see below). Required for the automatic reminders to work, since the GitHub Actions workflow sends it.
 2. Redeploy after setting the variables in Vercel (env var changes only take effect on the next deployment).
+3. Add the same `CRON_SECRET` value as a GitHub Actions secret on this repo: Settings → Secrets and variables → Actions → New repository secret, named `CRON_SECRET`.
 
 **On-demand usage:**
 
@@ -49,11 +50,13 @@ If you'd rather show a single canonical day per event, or if a room/time was mis
 - `POST /api/notifications` sends an SMS. Optional JSON body `{ "phone": "...", "message": "..." }` overrides the recipient and/or message; otherwise it defaults to `NOTIFY_PHONE_NUMBER` and an auto-generated "current/next class" message (see `lib/notify-message.ts`).
 - The **Class Reminders** panel in the UI shows configuration status and has a "Send test SMS" button wired to the same route.
 
-**Automatic reminders:** `vercel.json` schedules [Vercel Cron](https://vercel.com/docs/cron-jobs) to hit `GET /api/notifications/cron` every 10 minutes. That route checks `lib/schedule-data.ts` for any class starting in the next 6–10 minutes (see `getDueReminders` in `lib/notify-message.ts`) and texts a reminder for each match — the window is sized so a class is caught by exactly one tick, avoiding duplicate or missed sends.
+**Automatic reminders:** Vercel's Hobby plan only allows daily cron runs, so instead of Vercel Cron, `.github/workflows/sms-reminders.yml` runs every 10 minutes and calls `GET /api/notifications/cron` with the `CRON_SECRET` as a bearer token. That route checks `lib/schedule-data.ts` for any class starting in the next 6–10 minutes (see `getDueReminders` in `lib/notify-message.ts`) and texts a reminder for each match — the window is sized so a class is caught by exactly one tick, avoiding duplicate or missed sends.
 
-If `CRON_SECRET` is set, Vercel automatically sends it as `Authorization: Bearer <CRON_SECRET>` on its own cron requests, and the route rejects anything else with `401`. Without it, the endpoint accepts any request — set it once you deploy.
-
-Note: Vercel's Hobby plan only allows daily cron runs; the `*/10 * * * *` schedule in `vercel.json` needs a Pro plan (or swap in an external scheduler like cron-job.org hitting the same URL with the `CRON_SECRET` header) if you're on Hobby.
+Notes:
+- The workflow hardcodes the production URL (`https://work-schedule-ivory.vercel.app`) — update it if the deployment domain ever changes.
+- GitHub's schedule triggers are best-effort and can run a few minutes late, especially under high platform load; the reminder window already has slack built in for this.
+- GitHub disables scheduled workflows automatically after 60 days of repo inactivity — push a commit (or re-enable it manually under the Actions tab) if reminders stop firing after a long break.
+- If you'd rather not depend on GitHub Actions, upgrading the Vercel project to Pro removes the daily-cron restriction; you'd add back a `vercel.json` with a `crons` entry pointing at the same route.
 
 ## Deployment
 
