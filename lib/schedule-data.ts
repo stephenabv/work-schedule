@@ -7,20 +7,19 @@ import { LegendItem, ScheduleEntry } from "./types";
  * 1. On the Tue/Thu block, FabLab sessions are explicitly "every Thursday" —
  *    Tuesday itself is free during those slots.
  * 2. On the Mon/Wed/Fri block, FabLab sessions only say "once a week" with
- *    no day named. Mon & Wed are already filled by (MW)-tagged lab sessions,
- *    so by analogy with the Thursday pattern above, they're placed on Friday
- *    (the day otherwise mostly free). Adjust `recurrence`/`day` below if the
- *    actual FabLab day differs.
+ *    no day named. Placed on Monday per explicit instruction (not Friday).
+ *    Adjust `recurrence`/`day` below if the actual FabLab day differs.
  */
 export const SCHEDULE: ScheduleEntry[] = [
   // ---- Monday ----
   { id: "mon-1", day: "Monday", start: "07:30", end: "09:30", type: "available", title: "Available" },
-  { id: "mon-2", day: "Monday", start: "09:30", end: "10:30", type: "available", title: "Available" },
+  { id: "mon-2", day: "Monday", start: "09:30", end: "10:30", type: "fablab", title: "CCS101 E", room: "FabLab", recurrence: "Once a week" },
   { id: "mon-3", day: "Monday", start: "10:30", end: "11:30", type: "laboratory", title: "CCS101 E", room: "Laboratory 102C", recurrence: "MWF" },
-  { id: "mon-4", day: "Monday", start: "11:30", end: "12:30", type: "available", title: "Available" },
+  { id: "mon-4", day: "Monday", start: "11:30", end: "12:30", type: "fablab", title: "WS101A C", room: "FabLab", recurrence: "Once a week" },
   { id: "mon-5", day: "Monday", start: "12:30", end: "14:00", type: "laboratory", title: "WS101A C", room: "Laboratory 007-1B", recurrence: "MW" },
   { id: "mon-6", day: "Monday", start: null, end: null, type: "break", title: "Break", note: "~30 min (time approximate per source note)" },
   { id: "mon-7", day: "Monday", start: "14:00", end: "16:00", type: "laboratory", title: "CCS101 A", room: "Laboratory 007-1B", recurrence: "MW" },
+  { id: "mon-8", day: "Monday", start: "16:30", end: "17:30", type: "fablab", title: "CCS101 A", room: "FabLab", recurrence: "Once a week" },
 
   // ---- Tuesday ----
   { id: "tue-1", day: "Tuesday", start: "07:30", end: "08:00", type: "available", title: "Available" },
@@ -55,11 +54,9 @@ export const SCHEDULE: ScheduleEntry[] = [
 
   // ---- Friday ----
   { id: "fri-1", day: "Friday", start: "07:30", end: "09:30", type: "available", title: "Available" },
-  { id: "fri-2", day: "Friday", start: "09:30", end: "10:30", type: "fablab", title: "CCS101 E", room: "FabLab", recurrence: "Once a week" },
+  { id: "fri-2", day: "Friday", start: "09:30", end: "10:30", type: "available", title: "Available" },
   { id: "fri-3", day: "Friday", start: "10:30", end: "11:30", type: "laboratory", title: "CCS101 E", room: "Laboratory 102C", recurrence: "MWF" },
-  { id: "fri-4", day: "Friday", start: "11:30", end: "12:30", type: "fablab", title: "WS101A C", room: "FabLab", recurrence: "Once a week" },
-  { id: "fri-5", day: "Friday", start: "12:30", end: "16:30", type: "available", title: "Available" },
-  { id: "fri-6", day: "Friday", start: "16:30", end: "17:30", type: "fablab", title: "CCS101 A", room: "FabLab", recurrence: "Once a week" },
+  { id: "fri-4", day: "Friday", start: "11:30", end: "17:30", type: "available", title: "Available" },
 
   // ---- Saturday ----
   { id: "sat-1", day: "Saturday", start: "08:00", end: "11:00", type: "nstp", title: "NSTP-CWTS", room: "214-B" },

@@ -9,6 +9,7 @@ A personal class schedule tracker for the 1st Semester, SY 2026–2027, built wi
 - "Happening now" / "up next" banner that updates live
 - Light/dark theme (persisted)
 - Print-friendly layout
+- Download the current schedule view (legend + grid/list, respecting active filters) as a PNG
 - Placeholder notifications panel + `app/api/notifications/route.ts` stub for wiring up push/email/SMS reminders later
 
 ## Getting started
@@ -25,7 +26,7 @@ Open http://localhost:3000.
 All schedule data lives in `lib/schedule-data.ts`, transcribed from a handwritten timetable. Two ambiguities in the source note required an inference — both are documented as a comment directly above the data:
 
 1. **Tue/Thu FabLab sessions** are explicitly labeled "every Thursday" in the source, so Tuesday is free during those slots.
-2. **Mon/Wed/Fri FabLab sessions** only say "once a week" without naming a day. Since Monday and Wednesday are already filled by the `(MW)`-tagged lab sessions, these were placed on **Friday** by analogy with the Thursday pattern above. If the actual FabLab day differs, edit the `day` and `recurrence` fields on the `fri-*` entries.
+2. **Mon/Wed/Fri FabLab sessions** only say "once a week" without naming a day. They're placed on **Monday** (`mon-*` entries) alongside the existing `(MW)`-tagged lab sessions. If the actual FabLab day differs, edit the `day` and `recurrence` fields in `lib/schedule-data.ts`.
 
 If you'd rather show a single canonical day per event, or if a room/time was misread, `lib/schedule-data.ts` is the only file you need to touch — every view derives from it.
 
