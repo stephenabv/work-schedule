@@ -1,0 +1,15 @@
+name: SMS Class Reminders
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping-reminder-endpoint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call reminder endpoint
+        run: |
+          curl -sf -X GET "https://work-schedule-ivory.vercel.app/api/notifications/cron" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
