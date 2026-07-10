@@ -9,6 +9,15 @@ jobs:
   ping-reminder-endpoint:
     runs-on: ubuntu-latest
     steps:
+      - name: Check CRON_SECRET is configured
+        run: |
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::The CRON_SECRET repository secret is not set, so this workflow" \
+              "cannot authorize against /api/notifications/cron. Add it under Settings ->" \
+              "Secrets and variables -> Actions, using the same value configured in the" \
+              "CRON_SECRET environment variable on the Vercel project."
+            exit 1
+          fi
       - name: Call reminder endpoint
         run: |
           curl -sf -X GET "https://work-schedule-ivory.vercel.app/api/notifications/cron" \
