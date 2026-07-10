@@ -71,8 +71,8 @@ export default function FilterBar({
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <div className="flex flex-wrap items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
             <label className="flex items-center gap-1">
               From
               <input
@@ -93,7 +93,7 @@ export default function FilterBar({
             </label>
           </div>
 
-          <div className="flex items-center rounded-lg border border-slate-200 p-0.5 dark:border-slate-700">
+          <div className="flex shrink-0 items-center rounded-lg border border-slate-200 p-0.5 dark:border-slate-700">
             <button
               onClick={() => onViewChange("grid")}
               aria-label="Grid view"
@@ -114,7 +114,7 @@ export default function FilterBar({
             <button
               onClick={() => onChange(DEFAULT_FILTERS)}
               aria-label="Reset filters"
-              className="flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+              className="flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
             >
               <RotateCcw size={13} />
               Reset
