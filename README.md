@@ -10,7 +10,7 @@ A personal class schedule tracker for the 1st Semester, SY 2026–2027, built wi
 - Light/dark theme (persisted)
 - Print-friendly layout
 - Download the current schedule view (legend + grid/list, respecting active filters) as a PNG
-- SMS class reminders via [Semaphore](https://semaphore.co) — send a test SMS on demand from the UI, plus automatic reminders 10 minutes before each class via a scheduled GitHub Actions workflow
+- SMS class reminders via [Semaphore](https://semaphore.co) — send a test SMS on demand from the UI, plus automatic reminders shortly before each class starts and before it ends (Mon–Sat) via a scheduled GitHub Actions workflow
 
 ## Getting started
 
@@ -50,11 +50,14 @@ If you'd rather show a single canonical day per event, or if a room/time was mis
 - `POST /api/notifications` sends an SMS. Optional JSON body `{ "phone": "...", "message": "..." }` overrides the recipient and/or message; otherwise it defaults to `NOTIFY_PHONE_NUMBER` and an auto-generated "current/next class" message (see `lib/notify-message.ts`).
 - The **Class Reminders** panel in the UI shows configuration status and has a "Send test SMS" button wired to the same route.
 
-**Automatic reminders:** Vercel's Hobby plan only allows daily cron runs, so instead of Vercel Cron, `.github/workflows/sms-reminders.yml` runs every 10 minutes and calls `GET /api/notifications/cron` with the `CRON_SECRET` as a bearer token. That route checks `lib/schedule-data.ts` for any class starting in the next 6–10 minutes (see `getDueReminders` in `lib/notify-message.ts`) and texts a reminder for each match — the window is sized so a class is caught by exactly one tick, avoiding duplicate or missed sends.
+**Automatic reminders:** Vercel's Hobby plan only allows daily cron runs, so instead of Vercel Cron, `.github/workflows/sms-reminders.yml` calls `GET /api/notifications/cron` with the `CRON_SECRET` as a bearer token. Rather than polling on an interval, the workflow fires once per reminder — Monday to Saturday, 15 minutes before each class starts and 10 minutes before each class ends (e.g. an 8:00–10:00 class is pinged at 7:45 and 9:50; since GitHub's schedule triggers usually run a few minutes late, the SMS lands roughly 10 / 5 minutes ahead). The workflow forwards the cron expression that triggered it (`X-Github-Schedule` header), and the route maps it back to the exact class(es) it was scheduled for (see `lib/reminder-ticks.ts`), so each class gets exactly one "starts soon" and one "ends soon" SMS — no message tokens are spent outside those moments, and a late-firing cron neither misses nor duplicates a reminder. Manual runs (`workflow_dispatch` or a plain request without the header) fall back to the old behavior: remind about any class starting within the next 6–10 minutes.
+
+The cron entries in the workflow are **generated** from `lib/schedule-data.ts` — after changing the schedule, run `npm run generate:crons` and commit the updated workflow file.
 
 Notes:
 - The workflow hardcodes the production URL (`https://work-schedule-ivory.vercel.app`) — update it if the deployment domain ever changes.
-- GitHub's schedule triggers are best-effort and can run a few minutes late, especially under high platform load; the reminder window already has slack built in for this.
+- GitHub's schedule triggers are best-effort and can run a few minutes late, especially under high platform load; the ticks fire early on purpose so a typical delay still lands the SMS before class. In rare cases GitHub may skip a scheduled run entirely — that reminder is then skipped rather than sent late the next day.
+- Cron times in the workflow are UTC; the schedule data is Philippine time (UTC+8). The conversion is handled by the generator and by the route's reverse mapping.
 - GitHub disables scheduled workflows automatically after 60 days of repo inactivity — push a commit (or re-enable it manually under the Actions tab) if reminders stop firing after a long break.
 - If you'd rather not depend on GitHub Actions, upgrading the Vercel project to Pro removes the daily-cron restriction; you'd add back a `vercel.json` with a `crons` entry pointing at the same route.
 
