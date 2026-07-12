@@ -10,6 +10,7 @@ import NowBanner from "./NowBanner";
 import Legend from "./Legend";
 import ThemeToggle from "./ThemeToggle";
 import NotificationsPanel from "./NotificationsPanel";
+import Logo from "./Logo";
 import { Download, Loader2, Printer } from "lucide-react";
 
 export default function ScheduleApp({ initialEntries }: { initialEntries: ScheduleEntry[] }) {
@@ -73,11 +74,14 @@ export default function ScheduleApp({ initialEntries }: { initialEntries: Schedu
   return (
     <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-4 px-3 py-5 sm:px-6 sm:py-8">
       <header className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">WorkSched</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            1st Semester Schedule · SY 2026–2027
-          </p>
+        <div className="flex items-center gap-3">
+          <Logo size={40} className="shrink-0 drop-shadow-sm" />
+          <div>
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">WorkSched</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              1st Semester Schedule · SY 2026–2027
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2 no-print">
           <button
