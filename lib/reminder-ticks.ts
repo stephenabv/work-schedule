@@ -25,10 +25,6 @@ export const END_TICK_LEAD_MINUTES = 10;
 // no DST), while GitHub Actions cron runs in UTC.
 export const SCHEDULE_UTC_OFFSET_MINUTES = 8 * 60;
 
-// A cron fire older than this is ignored rather than matched to a tick —
-// guards against a stray retry re-sending a long-past reminder.
-const MAX_FIRE_AGE_MS = 3 * 60 * 60 * 1000;
-
 const MINUTES_PER_DAY = 24 * 60;
 
 export type ReminderKind = "start" | "end";
@@ -127,8 +123,10 @@ export function buildCronExpressions(): string[] {
 /**
  * Given the cron expression that triggered a workflow run
  * (github.event.schedule), work out when that fire was actually scheduled
- * for, in UTC. Returns null when the expression is malformed or the
- * scheduled moment isn't in the recent past.
+ * for, in UTC. Returns null only when the expression is malformed or no
+ * occurrence falls on today/yesterday — how late the delivery is doesn't
+ * matter here; whether a late fire is still worth acting on is decided per
+ * reminder by the caller.
  */
 export function resolveCronFire(expression: string, now: Date): Date | null {
   const parts = expression.trim().split(/\s+/);
@@ -151,8 +149,10 @@ export function resolveCronFire(expression: string, now: Date): Date | null {
   }
 
   // The scheduled moment is today or yesterday at hour:minute UTC — whichever
-  // is the most recent one not in the future (fires near midnight UTC can be
-  // delivered after the UTC date has rolled over).
+  // is the most recent one not in the future. GitHub's schedule triggers are
+  // best-effort and routinely arrive hours late, and fires near midnight UTC
+  // can be delivered after the UTC date has rolled over, so no upper bound is
+  // placed on the delay.
   for (const daysBack of [0, 1]) {
     const candidate = new Date(Date.UTC(
       now.getUTCFullYear(),
@@ -162,7 +162,7 @@ export function resolveCronFire(expression: string, now: Date): Date | null {
       minute
     ));
     const age = now.getTime() - candidate.getTime();
-    if (age >= 0 && age <= MAX_FIRE_AGE_MS && dows.has(candidate.getUTCDay())) {
+    if (age >= 0 && dows.has(candidate.getUTCDay())) {
       return candidate;
     }
   }

@@ -6,7 +6,9 @@ name: SMS Class Reminders
 # 10 / 5 minutes ahead — e.g. an 8:00–10:00 class is pinged at 7:45 and 9:50).
 # The endpoint uses the forwarded cron expression to work out exactly which
 # class(es) the run was scheduled for, so no SMS is spent outside these
-# moments and late runs neither miss nor duplicate reminders.
+# moments. GitHub delivers schedule events late (sometimes by hours); the
+# endpoint sends the SMS only while the class start/end is still ahead, and
+# reports anything already past as skipped without failing the run.
 on:
   schedule:
     # Times below are UTC (the class schedule is UTC+8). Regenerate this
@@ -54,6 +56,6 @@ jobs:
           fi
       - name: Call reminder endpoint
         run: |
-          curl -sf -X GET "https://work-schedule-ivory.vercel.app/api/notifications/cron" \
+          curl -sS --fail-with-body -X GET "https://work-schedule-ivory.vercel.app/api/notifications/cron" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "X-Github-Schedule: ${{ github.event.schedule }}"
