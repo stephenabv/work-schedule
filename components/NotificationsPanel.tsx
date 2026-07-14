@@ -22,7 +22,7 @@ export default function NotificationsPanel() {
       .catch(() => setStatus({ configured: false, hasApiKey: false, hasPhoneNumber: false }));
   }, []);
 
-  async function sendTest() {
+  async function sendNow() {
     setSending(true);
     setResult(null);
     try {
@@ -66,16 +66,16 @@ export default function NotificationsPanel() {
         <input
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          placeholder="Override number (optional), e.g. 09171234567"
+          placeholder="Override number(s), comma-separated (optional), e.g. 09171234567,09181234567"
           className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm outline-none ring-emerald-500 focus:ring-2 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
         />
         <button
-          onClick={sendTest}
+          onClick={sendNow}
           disabled={sending || !status?.hasApiKey}
           className="flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-          Send test SMS
+          Send SMS now
         </button>
       </div>
 

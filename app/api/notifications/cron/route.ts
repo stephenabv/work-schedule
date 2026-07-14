@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendSms } from "@/lib/semaphore";
-import { buildReminderMessage, buildTickReminderMessage, getDueReminders } from "@/lib/notify-message";
+import {
+  buildReminderMessage,
+  buildScheduleReminderMessage,
+  buildTickReminderMessage,
+  getDueReminders,
+} from "@/lib/notify-message";
 import {
   END_TICK_LEAD_MINUTES,
   START_TICK_LEAD_MINUTES,
@@ -22,8 +27,10 @@ import {
 // spent outside those moments.
 //
 // Requests without a cron expression (e.g. manual workflow_dispatch runs)
-// fall back to the original behavior: remind about any class starting within
-// the getDueReminders window.
+// always send an SMS: any class starting within the getDueReminders window
+// if there is one, otherwise the current/next-class schedule summary — so
+// manually triggering the workflow reliably delivers a real message instead
+// of silently sending nothing outside a reminder window.
 //
 // If CRON_SECRET is set, only requests carrying a matching
 // "Authorization: Bearer <CRON_SECRET>" header are accepted — the workflow
@@ -85,15 +92,22 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    return NextResponse.json({
-      checkedAt: now.toISOString(),
-      schedule: cronExpression,
-      scheduledFor: fire.toISOString(),
-      tick,
-      sent: results.length,
-      skipped,
-      results,
-    });
+    // A failed send (bad API key, unapproved sender name, invalid number,
+    // no credits) is misconfiguration and should show up as a red workflow
+    // run, unlike stale reminders which are merely skipped.
+    const ok = results.every((r) => r.success);
+    return NextResponse.json(
+      {
+        checkedAt: now.toISOString(),
+        schedule: cronExpression,
+        scheduledFor: fire.toISOString(),
+        tick,
+        sent: results.filter((r) => r.success).length,
+        skipped,
+        results,
+      },
+      { status: ok ? 200 : 502 }
+    );
   }
 
   const due = getDueReminders(now);
@@ -106,5 +120,18 @@ export async function GET(request: NextRequest) {
     })
   );
 
-  return NextResponse.json({ checkedAt: now.toISOString(), sent: results.length, results });
+  // Manual runs with no class due still send the schedule summary, so
+  // triggering the workflow always produces a text message.
+  if (results.length === 0) {
+    const message = buildScheduleReminderMessage(now);
+    const result = await sendSms(message);
+    results.push({ entry: "Schedule summary", message, success: result.success, error: result.error });
+  }
+
+  const sent = results.filter((r) => r.success).length;
+  const ok = results.every((r) => r.success);
+  return NextResponse.json(
+    { checkedAt: now.toISOString(), sent, results },
+    { status: ok ? 200 : 502 }
+  );
 }
